@@ -1,5 +1,17 @@
+from functools import lru_cache
 import urwid
 from subprocess import Popen, PIPE
+
+
+@lru_cache(maxsize=2)
+def _cow_lines(inner_size):
+    inner_maxcol, inner_maxrow = inner_size
+    dummy_line = inner_maxcol * "#"
+    dummy_box = "\n".join(inner_maxrow * [dummy_line])
+    p = Popen(["cowsay", "-W", str(inner_maxcol + 1)], stdin=PIPE, stdout=PIPE)
+    cow_text = p.communicate(dummy_box.encode("utf-8"))[0].decode("utf-8")
+    assert p.returncode == 0
+    return [line.encode("utf-8") for line in cow_text.splitlines()]
 
 
 class Cowsay(urwid.WidgetDecoration):
@@ -15,18 +27,9 @@ class Cowsay(urwid.WidgetDecoration):
         inner_maxrow = maxrow - self._TOP - self._BOTTOM
         return inner_maxcol, inner_maxrow
 
-    def _cow_lines(self, inner_size):
-        inner_maxcol, inner_maxrow = inner_size
-        dummy_line = inner_maxcol * "#"
-        dummy_box = "\n".join(inner_maxrow * [dummy_line])
-        p = Popen(["cowsay", "-W", str(inner_maxcol + 1)], stdin=PIPE, stdout=PIPE)
-        cow_text = p.communicate(dummy_box.encode("utf-8"))[0].decode("utf-8")
-        assert p.returncode == 0
-        return [line.encode("utf-8") for line in cow_text.splitlines()]
-
     def render(self, size, focus=False):
         inner_size = self._inner_size(size)
-        lines = self._cow_lines(inner_size)
+        lines = _cow_lines(inner_size)
         cow = urwid.TextCanvas(lines, maxcol=size[0])
         inner = self.original_widget.render(inner_size, focus)
         return urwid.CanvasOverlay(urwid.CompositeCanvas(inner), cow, self._LEFT, self._TOP)
