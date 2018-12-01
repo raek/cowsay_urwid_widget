@@ -1,5 +1,5 @@
 import urwid
-import subprocess
+from subprocess import Popen, PIPE
 
 
 class Cowsay(urwid.WidgetDecoration):
@@ -8,7 +8,6 @@ class Cowsay(urwid.WidgetDecoration):
     _RIGHT = 2
     _TOP = 1
     _BOTTOM = 6
-
 
     def _inner_size(self, size):
         maxcol, maxrow = size
@@ -20,8 +19,10 @@ class Cowsay(urwid.WidgetDecoration):
         inner_maxcol, inner_maxrow = inner_size
         dummy_line = inner_maxcol * "#"
         dummy_box = "\n".join(inner_maxrow * [dummy_line])
-        text = subprocess.run(["cowsay", "-W", str(inner_maxcol + 1)], check=True, stdout=subprocess.PIPE, input=dummy_box.encode("utf-8")).stdout
-        return [line.encode("utf-8") for line in text.decode("utf-8").splitlines()]
+        p = Popen(["cowsay", "-W", str(inner_maxcol + 1)], stdin=PIPE, stdout=PIPE)
+        cow_text = p.communicate(dummy_box.encode("utf-8"))[0].decode("utf-8")
+        assert p.returncode == 0
+        return [line.encode("utf-8") for line in cow_text.splitlines()]
 
     def render(self, size, focus=False):
         inner_size = self._inner_size(size)
