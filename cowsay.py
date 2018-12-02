@@ -33,8 +33,6 @@ class _Cow(urwid.Widget):
         return inner_maxcol, inner_maxrow
 
     def _cow_lines(self, size):
-        with open("cowlog.txt", "at") as f:
-            f.write("size = {}\n".format(size))
         inner_maxcol, inner_maxrow = size
         dummy_line = inner_maxcol * "#"
         dummy_box = "\n".join(inner_maxrow * [dummy_line])
